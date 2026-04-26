@@ -4,7 +4,6 @@ class NeuralNetwork:
     def __init__(self, input_dim, h_dim, out_dim, lr=0.05):
         self.lr = lr
 
-        # He initialization
         self.W1 = np.random.randn(input_dim, h_dim) * np.sqrt(2 / input_dim)
         self.B1 = np.zeros((1, h_dim))
 
