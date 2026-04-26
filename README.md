@@ -1,31 +1,100 @@
-# 🧠 Neural Network from Scratch (NumPy)
+# Neural Network from Scratch (NumPy)
 
-## 📌 Overview
+This project implements a simple feedforward neural network **from scratch using only NumPy**, without any deep learning frameworks such as TensorFlow or PyTorch.
 
-This project implements a simple feedforward neural network **from scratch using only NumPy**, without any deep learning frameworks.
-The goal is to demonstrate a clear understanding of:
+The main goal of this project is to understand what happens under the hood in modern deep learning frameworks. Instead of treating neural networks as a “black box”, this project focuses on the core mathematical components behind them.
 
-* Forward propagation
-* Backpropagation
-* Gradient-based optimization
-* Multi-class classification
+The implementation is explained in three main parts:
 
-The model is trained on the classic **Iris dataset**.
+- Forward propagation  
+- Backpropagation  
+- Gradient-based optimization  
+
+## Forward propagation
+
+The dataset contains 150 samples, each with 4 input features and belonging to one of 3 classes. This is a **multi-class classification problem**.
+
+### Model Architecture
+
+Based on the dataset:
+
+- Input layer: 4 neurons (one per feature)  
+- Hidden layer: 10 neurons  
+- Output layer: 3 neurons (one per class)  
 
 ---
 
-## 📊 Dataset
+### Weight Initialization
 
-We use the Iris dataset:
+Before performing forward propagation, we need to initialize the model parameters (weights and biases). 
 
-* 150 samples
-* 4 features
-* 3 classes
+These parameters are the “brain” of the model — they determine how input data is transformed into predictions.
 
-Before training:
+Weights are initialized randomly, but not purely random.  
+We use **He initialization**, which helps stabilize training and improves convergence during gradient-based optimization.
 
-* Features are **standardized**
-* Labels are converted to **one-hot encoding**
+```python
+self.W1 = np.random.randn(input_dim, h_dim) * np.sqrt(2 / input_dim)
+self.B1 = np.zeros((1, h_dim))
+
+self.W2 = np.random.randn(h_dim, out_dim) * np.sqrt(2 / h_dim)
+self.B2 = np.zeros((1, out_dim))
+````
+To better understand the implementation, let's rewrite the model in mathematical form using matrices.
+
+Neural networks rely heavily on matrix operations, which allow us to compute many operations in parallel.  
+This is one of the key reasons why neural networks are efficient and scalable.
+
+For now, let's define the shapes of our parameters:
+
+- W₁ ∈ ℝ^(4 × 10)  
+- B₁ ∈ ℝ^(1 × 10)  
+- W₂ ∈ ℝ^(10 × 3)  
+- B₂ ∈ ℝ^(1 × 3)  
+
+Below is how these parameters look in matrix form:
+
+$$
+W_1 =
+\begin{bmatrix}
+w^{(1)}_{11} & w^{(1)}_{12} & w^{(1)}_{13} & \cdots & w^{(1)}_{1,10} \\
+w^{(1)}_{21} & w^{(1)}_{22} & w^{(1)}_{23} & \cdots & w^{(1)}_{2,10} \\
+w^{(1)}_{31} & w^{(1)}_{32} & w^{(1)}_{33} & \cdots & w^{(1)}_{3,10} \\
+w^{(1)}_{41} & w^{(1)}_{42} & w^{(1)}_{43} & \cdots & w^{(1)}_{4,10}
+\end{bmatrix}
+\quad
+B_1 =
+\begin{bmatrix}
+b^{(1)}_1 & b^{(1)}_2 & b^{(1)}_3 & \cdots & b^{(1)}_{10}
+\end{bmatrix}
+$$
+
+$$
+W_2 =
+\begin{bmatrix}
+w^{(2)}_{11} & w^{(2)}_{12} & w^{(2)}_{13} \\
+w^{(2)}_{21} & w^{(2)}_{22} & w^{(2)}_{23} \\
+\vdots & \vdots & \vdots \\
+w^{(2)}_{10,1} & w^{(2)}_{10,2} & w^{(2)}_{10,3}
+\end{bmatrix}
+\quad
+B_2 =
+\begin{bmatrix}
+b^{(2)}_1 & b^{(2)}_2 & b^{(2)}_3
+\end{bmatrix}
+$$
+
+### ReLU Activation
+
+```python
+def relu(self, x):
+        return np.maximum(0, x)
+```
+
+ReLU sets negative values to zero and introduces non-linearity.  
+Without activation functions, a neural network would behave like a linear model.  
+This allows the model to learn complex patterns and helps reduce the vanishing gradient problem.
+
 
 ---
 
