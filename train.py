@@ -1,100 +1,47 @@
 import numpy as np
-from sklearn import datasets
+from model import NeuralNetwork
+from data import load_data
 
-input_dim, h_dim, out_dim = 4, 10, 3  
-batch_size = 16
-num_epoch = 100
-alpha = 0.05
+def train():
+    input_dim = 4
+    h_dim = 10
+    out_dim = 3
+    batch_size = 16
+    epochs = 100
+    lr = 0.05
 
-iris = datasets.load_iris()
-X = iris.data
-y = iris.target
+    X_train, X_test, Y_train, Y_test = load_data()
 
-X = (X - np.mean(X, axis=0)) / np.std(X, axis=0)
+    model = NeuralNetwork(input_dim, h_dim, out_dim, lr)
 
-def to_one_hot(y, out_dim):
-    return np.eye(out_dim)[y]
+    for epoch in range(epochs):
+        indices = np.arange(len(X_train))
+        np.random.shuffle(indices)
 
-Y_oh = to_one_hot(y, out_dim)
+        X_train = X_train[indices]
+        Y_train = Y_train[indices]
 
-indices = np.arange(len(X))
-np.random.shuffle(indices)
-X, Y_oh = X[indices], Y_oh[indices]
+        losses = []
 
-X_train, y_train = X[:120], Y_oh[:120]
-X_test, y_test = X[120:], Y_oh[120:]
+        for i in range(0, len(X_train), batch_size):
+            X_batch = X_train[i:i + batch_size]
+            Y_batch = Y_train[i:i + batch_size]
 
-W1 = np.random.randn(input_dim, h_dim) * np.sqrt(2/input_dim)
-B1 = np.zeros((1, h_dim))
-W2 = np.random.randn(h_dim, out_dim) * np.sqrt(2/h_dim)
-B2 = np.zeros((1, out_dim))
+            Z = model.forward(X_batch)
+            loss = model.loss(Y_batch, Z)
 
-def ReLU(X):
-    return np.maximum(X, 0)
+            grads = model.backward(X_batch, Y_batch)
+            model.update(*grads)
 
-def softmax(X):
-    exps = np.exp(X - np.max(X, axis=1, keepdims=True))
-    return exps / np.sum(exps, axis=1, keepdims=True)
+            losses.append(loss)
 
-def loss(Y, Z):
-    return np.mean(-np.sum(Y * np.log(Z + 1e-15), axis=1))
+        if (epoch + 1) % 10 == 0:
+            print(
+                f"Epoch {epoch+1} | "
+                f"Loss: {np.mean(losses):.4f} | "
+                f"Train Acc: {model.accuracy(X_train, Y_train):.4f} | "
+                f"Test Acc: {model.accuracy(X_test, Y_test):.4f}"
+            )
 
-def feedforward(W1, W2, B1, B2, X):
-    A1 = X @ W1 + B1
-    H1 = ReLU(A1)
-    A2 = H1 @ W2 + B2
-    Z = softmax(A2)
-    return A1, H1, A2, Z
-
-def Backward(A1, H1, A2, Z, Y, X):
-    m = X.shape[0] 
-    
-    dE_dA2 = Z - Y         
-    dE_dW2 = (H1.T @ dE_dA2) / m  
-    dE_dB2 = np.sum(dE_dA2, axis=0, keepdims=True) / m      
-    
-    dE_dH1 = dE_dA2 @ W2.T   
-    dE_dA1 = dE_dH1 * (A1 > 0)
-    
-    dE_dW1 = (X.T @ dE_dA1) / m
-    dE_dB1 = np.sum(dE_dA1, axis=0, keepdims=True) / m       
-    return dE_dW2, dE_dW1, dE_dB2, dE_dB1
-
-def Update(dW2, dW1, dB2, dB1, W1, W2, B1, B2):
-    W1 -= alpha * dW1
-    W2 -= alpha * dW2
-    B1 -= alpha * dB1
-    B2 -= alpha * dB2
-    return W1, W2, B1, B2
-
-def predict(X):
-    _, _, _, Z = feedforward(W1, W2, B1, B2, X)
-    return np.argmax(Z, axis=1)
-
-def accuracy(x_data, y_data):
-    prediction = predict(x_data)
-    y_true = np.argmax(y_data, axis=1)
-    return np.mean(prediction == y_true)
-
-for epoch in range(num_epoch):
-    indices = np.arange(len(X_train))
-    np.random.shuffle(indices)
-    X_train, y_train = X_train[indices], y_train[indices]
-    
-    epoch_losses = [] 
-      
-    for i in range(0, len(X_train), batch_size):
-        X_sample = X_train[i:i+batch_size]
-        Y_sample = y_train[i:i+batch_size]
-        
-        A1, H1, A2, Z = feedforward(W1, W2, B1, B2, X_sample)
-        E = loss(Y_sample, Z)
-        dW2, dW1, dB2, dB1 = Backward(A1, H1, A2, Z, Y_sample, X_sample)
-        W1, W2, B1, B2 = Update(dW2, dW1, dB2, dB1, W1, W2, B1, B2)
-        
-        epoch_losses.append(E)
-
-    if (epoch + 1) % 10 == 0:
-        acc_tr = accuracy(X_train, y_train)
-        acc_ts = accuracy(X_test, y_test)
-        print(f"Epoch: {epoch+1:3} | Loss: {np.mean(epoch_losses):.4f} | Acc Train: {acc_tr:.4f} | Acc Test: {acc_ts:.4f}")
+if __name__ == "__main__":
+    train()
