@@ -12,7 +12,44 @@ The implementation is explained in three main parts:
 
 ## Forward propagation
 
-The dataset contains 150 samples, each with 4 input features and belonging to one of 3 classes. This is a **multi-class classification problem**.
+Before diving into the full implementation of the forward pass, we need to cover the essential building blocks. This section explains the data preprocessing and the activation functions that make the network work.
+
+### Data preparation
+
+```python
+def load_data():
+    iris = datasets.load_iris()
+    X = iris.data
+    y = iris.target
+
+    # normalization
+    X = (X - np.mean(X, axis=0)) / np.std(X, axis=0)
+
+    # one-hot encoding
+    Y = np.eye(3)[y]
+
+    # shuffle
+    indices = np.arange(len(X))
+    np.random.shuffle(indices)
+
+    X, Y = X[indices], Y[indices]
+
+    # split
+    split_idx = int(len(X) * 0.8)
+    X_train, X_test = X[:split_idx], X[split_idx:]
+    Y_train, Y_test = Y[:split_idx], Y[split_idx:]
+
+    return X_train, X_test, Y_train, Y_test
+```
+
+To implement forward propagation, the data must first be preprocessed. The following steps are performed in the load_data function:
+
+- Normalization: The input features are standardized to have a mean of 0 and a standard deviation of 1. This ensures a smoother loss surface, which allows the model to converge faster and more efficiently.
+- One-Hot Encoding: Target labels are converted from scalars to one-hot encoded vectors. This representation is essential for calculating the loss and gradients during the backpropagation phase.
+- Shuffling: Since the Iris dataset is sorted by class, the data is shuffled to prevent class imbalance in the training and testing sets.
+- Data Splitting: The dataset is split into a training set (80% / 120 samples) and a testing set (20% / 30 samples) to evaluate the model's generalization performance.
+  
+---
 
 ### Model Architecture
 
@@ -20,7 +57,58 @@ Based on the dataset:
 
 - Input layer: 4 neurons (one per feature)  
 - Hidden layer: 10 neurons  
-- Output layer: 3 neurons (one per class)  
+- Output layer: 3 neurons (one per class)
+
+
+```mermaid
+graph LR
+    X1((x1)) --> H1((h1))
+    X2((x2)) --> H1
+    X3((x3)) --> H1
+    X4((x4)) --> H1
+
+    H1 --> O1((y1))
+    H1 --> O2((y2))
+    H1 --> O3((y3))
+```
+
+```mermaid
+graph LR
+    subgraph Input_Layer [Input Layer]
+        I1((X1))
+        I2((X2))
+        I3((X3))
+        I4((X4))
+    end
+
+    subgraph Hidden_Layer [Hidden Layer]
+        H1((H1))
+        H2((H2))
+        H3((H3))
+        H4((H4))
+        H5((H5))
+        H6((H6))
+        H7((H7))
+        H8((H8))
+        H9((H9))
+        H10((H10))
+    end
+
+    subgraph Output_Layer [Output Layer]
+        O1((Y1))
+        O2((Y2))
+        O3((Y3))
+    end
+
+    I1 --> H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10
+    I2 --> H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10
+    I3 --> H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10
+    I4 --> H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10
+
+    H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10 --> O1
+    H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10 --> O2
+    H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10 --> O3
+```
 
 ---
 
@@ -39,7 +127,7 @@ self.B1 = np.zeros((1, h_dim))
 
 self.W2 = np.random.randn(h_dim, out_dim) * np.sqrt(2 / h_dim)
 self.B2 = np.zeros((1, out_dim))
-````
+```
 To better understand the implementation, let's rewrite the model in mathematical form using matrices.
 
 Neural networks rely heavily on matrix operations, which allow us to compute many operations in parallel.  
@@ -84,19 +172,41 @@ b^{(2)}_1 & b^{(2)}_2 & b^{(2)}_3
 \end{bmatrix}
 $$
 
+---
+
 ### ReLU Activation
 
 ```python
 def relu(self, x):
         return np.maximum(0, x)
 ```
+<p align="center">
+  <img src="images/relu_activation.jpg" width="500"/>
+</p>
 
 ReLU sets negative values to zero and introduces non-linearity.  
 Without activation functions, a neural network would behave like a linear model.  
 This allows the model to learn complex patterns and helps reduce the vanishing gradient problem.
 
+---
+
+### Softmax
 
 ---
+
+### Forward pass
+
+```python
+def forward(self, X):
+        self.A1 = X @ self.W1 + self.B1
+        self.H1 = self.relu(self.A1)
+
+        self.A2 = self.H1 @ self.W2 + self.B2
+        self.Z = self.softmax(self.A2)
+
+        return self.Z
+```
+
 
 ## 🏗️ Model Architecture
 
