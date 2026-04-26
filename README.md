@@ -59,56 +59,9 @@ Based on the dataset:
 - Hidden layer: 10 neurons  
 - Output layer: 3 neurons (one per class)
 
-
-```mermaid
-graph LR
-    X1((x1)) --> H1((h1))
-    X2((x2)) --> H1
-    X3((x3)) --> H1
-    X4((x4)) --> H1
-
-    H1 --> O1((y1))
-    H1 --> O2((y2))
-    H1 --> O3((y3))
-```
-
-```mermaid
-graph LR
-    subgraph Input_Layer [Input Layer]
-        I1((X1))
-        I2((X2))
-        I3((X3))
-        I4((X4))
-    end
-
-    subgraph Hidden_Layer [Hidden Layer]
-        H1((H1))
-        H2((H2))
-        H3((H3))
-        H4((H4))
-        H5((H5))
-        H6((H6))
-        H7((H7))
-        H8((H8))
-        H9((H9))
-        H10((H10))
-    end
-
-    subgraph Output_Layer [Output Layer]
-        O1((Y1))
-        O2((Y2))
-        O3((Y3))
-    end
-
-    I1 --> H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10
-    I2 --> H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10
-    I3 --> H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10
-    I4 --> H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10
-
-    H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10 --> O1
-    H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10 --> O2
-    H1 & H2 & H3 & H4 & H5 & H6 & H7 & H8 & H9 & H10 --> O3
-```
+<p align="center">
+  <img src="images/mlp_model_from_scratch.jpg" width="400"/>
+</p>
 
 ---
 
@@ -196,6 +149,8 @@ This allows the model to learn complex patterns and helps reduce the vanishing g
 
 ### Forward pass
 
+Now that we have defined the data and activation functions, we can implement the forward propagation.
+
 ```python
 def forward(self, X):
         self.A1 = X @ self.W1 + self.B1
@@ -207,6 +162,89 @@ def forward(self, X):
         return self.Z
 ```
 
+
+To better understand the forward pass, consider a single input vector:
+
+$$
+X = [x_1, x_2, x_3, x_4]
+$$
+
+This represents one observation.
+
+Now, consider a single neuron in the hidden layer.  
+This neuron is connected to all input features through a set of weights:
+
+$$[w_{11}^{(1)}, w_{21}^{(1)}, w_{31}^{(1)}, w_{41}^{(1)}]$$
+
+The neuron computes a weighted sum of the inputs:
+
+$$a^{(1)}_1 = (x_1 \cdot w_{11}^{(1)} + x_2 \cdot w_{21}^{(1)} + x_3 \cdot w_{31}^{(1)} + x_4 \cdot w_{41}^{(1)}) + b_1^{(1)}$$
+
+Here, \( b \) is the bias term.
+
+The same operation is applied to all neurons in the hidden layer.
+
+The calculation of the vector $\mathbf{A_1}$ can be represented as a matrix operation:
+
+$$\mathbf{A_1} = \begin{bmatrix} x_1 & x_2 & x_3 & x_4 \end{bmatrix} \cdot 
+\begin{bmatrix}
+w^{(1)}_{11} & w^{(1)}_{12} & w^{(1)}_{13} & \cdots & w^{(1)}_{1,10} \\
+w^{(1)}_{21} & w^{(1)}_{22} & w^{(1)}_{23} & \cdots & w^{(1)}_{2,10} \\
+w^{(1)}_{31} & w^{(1)}_{32} & w^{(1)}_{33} & \cdots & w^{(1)}_{3,10} \\
+w^{(1)}_{41} & w^{(1)}_{42} & w^{(1)}_{43} & \cdots & w^{(1)}_{4,10}
+\end{bmatrix} 
++ 
+\begin{bmatrix}
+b^{(1)}_1 & b^{(1)}_2 & b^{(1)}_3 & \cdots & b^{(1)}_{10}
+\end{bmatrix}$$
+
+**Where:**
+- $\mathbf{X} = [x_1, x_2, x_3, x_4]$ is the **input vector** (1 $\times$ 4).
+- $\mathbf{W_1}$ is the **weight matrix** (4 $\times$ 10), where each column represents the weights for a single neuron.
+- $\mathbf{B_1}$ is the **bias vector** (1 $\times$ 10), adding a trainable offset to each neuron.
+
+This mathematical operation is exactly what is implemented in the code as:
+`self.A1 = X @ self.W1 + self.B1`
+
+More generally, for any neuron $j$ in the hidden layer, the formula is:
+
+$$a^{(1)}_j = \sum_{i=1}^{4} (x_i \cdot w_{ij}^{(1)}) + b_j^{(1)}$$
+
+Then, the ReLU activation function is applied:
+
+$$h_j = \text{ReLU}(\mathbf{a^{(1)}_j}) \quad \text{or} \quad h_j = \max(0, a^{(1)}_j)$$
+
+This is implemented as: `self.H1 = self.relu(self.A1)`
+
+After the hidden layer activation, the resulting vector $\mathbf{H_1}$ is passed to the output layer to produce the final predictions.
+
+The output layer transforms the 10 hidden neurons into 3 output neurons (one for each Iris class). This is represented by the following matrix operation:
+
+$$\mathbf{A_2} = \begin{bmatrix} h_1 & h_2 & \dots & h_{10} \end{bmatrix} \cdot 
+\begin{bmatrix}
+w^{(2)}_{11} & w^{(2)}_{12} & w^{(2)}_{13} \\
+w^{(2)}_{21} & w^{(2)}_{22} & w^{(2)}_{23} \\
+\vdots & \vdots & \vdots \\
+w^{(2)}_{10,1} & w^{(2)}_{10,2} & w^{(2)}_{10,3}
+\end{bmatrix} 
++ 
+\begin{bmatrix}
+b^{(2)}_1 & b^{(2)}_2 & b^{(2)}_3
+\end{bmatrix}$$
+
+**Where:**
+- $\mathbf{H_1}$ is the **hidden layer output** (1 $\times$ 10).
+- $\mathbf{W_2}$ is the **output weight matrix** (10 $\times$ 3).
+- $\mathbf{B_2}$ is the **output bias vector** (1 $\times$ 3).
+- $\mathbf{A_2}$ is the **logits vector** (1 $\times$ 3). These are raw scores that haven't been normalized yet.
+
+This is implemented as: `self.A2 = self.H1 @ self.W2 + self.B2`
+
+To convert the raw scores ($\mathbf{A_2}$) into probabilities that sum up to 1, we use the **Softmax** function. For each output neuron $i$, the probability $z_i$ is calculated as:
+
+$$z_i = \frac{e^{a^{(2)}_{i}}}{\sum_{j=1}^{3} e^{a^{(2)}_{j}}}$$
+
+This is implemented as: `self.Z = self.softmax(self.A2)`
 
 ## 🏗️ Model Architecture
 
