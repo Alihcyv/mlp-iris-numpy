@@ -14,7 +14,8 @@ def load_data():
 
     X, Y = X[indices], Y[indices]
 
-    X_train, X_test = X[:120], X[120:]
-    Y_train, Y_test = Y[:120], Y[120:]
+    split_idx = int(len(X) * 0.8)
+    X_train, X_test = X[:split_idx], X[split_idx:]
+    Y_train, Y_test = Y[:split_idx], Y[split_idx:]
 
     return X_train, X_test, Y_train, Y_test
