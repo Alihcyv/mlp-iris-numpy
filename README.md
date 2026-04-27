@@ -305,6 +305,67 @@ def loss(self, Y, Z):
 
 ## Backpropagation
 
+## Backpropagation
+
+Now we move to the most challenging yet critical part of the neural network: **Backpropagation**. This is the process where the model actually "learns" by adjusting its weights to minimize the loss.
+
+### Manual Gradients vs. Automatic Differentiation
+In modern frameworks like **PyTorch** or **TensorFlow**, this process is handled automatically by a mechanism called *Autograd* (Automatic Differentiation). However, implementing this from scratch using **NumPy** requires us to compute the gradients manually.
+
+To avoid the complexity and inefficiency of calculating derivatives for each single weight sequentially, we use **matrix calculus**. This allows us to compute the gradients for entire layers in parallel, mirroring how professional frameworks operate under the hood.
+
+### Objectives and Knowns
+Our goal is to find the gradients of the loss function $L$ with respect to each of our trainable parameters. These gradients tell us how much we need to change the weights to decrease the error:
+
+$$\frac{\partial L}{\partial \mathbf{W_1}}, \quad \frac{\partial L}{\partial \mathbf{B_1}}, \quad \frac{\partial L}{\partial \mathbf{W_2}}, \quad \frac{\partial L}{\partial \mathbf{B_2}}$$
+
+To compute these, we rely on the values stored during the **Forward Pass**:
+- $\mathbf{A_1}, \mathbf{H_1}$ (Hidden layer pre-activations and activations)
+- $\mathbf{A_2}, \mathbf{Z}$ (Output layer logits and probabilities)
+
+### Forward Pass Recap
+To keep the derivations clear, let's recap the forward propagation chain:
+$$\mathbf{X} \xrightarrow{W_1, B_1} \mathbf{A_1} \xrightarrow{\text{ReLU}} \mathbf{H_1} \xrightarrow{W_2, B_2} \mathbf{A_2} \xrightarrow{\text{Softmax}} \mathbf{Z} \xrightarrow{\text{CCE}} L$$
+
+In mathematical terms:
+1. $\mathbf{A_1} = \mathbf{X}\mathbf{W_1} + \mathbf{B_1}$
+2. $\mathbf{H_1} = \text{ReLU}(\mathbf{A_1})$
+3. $\mathbf{A_2} = \mathbf{H_1}\mathbf{W_2} + \mathbf{B_2}$
+4. $\mathbf{Z} = \text{Softmax}(\mathbf{A_2})$
+5. $L = \text{Loss}(\mathbf{Y}, \mathbf{Z})$
+
+
+
+## Backpropagation
+
+Now we move to the most challenging part of neural network implementation: **Backpropagation**. 
+
+In this section, we will manually derive the gradients of the loss function. This process highlights the fundamental difference between using a library like **NumPy** and using deep learning frameworks such as **PyTorch** or **TensorFlow**. While frameworks use a mechanism called *Automatic Differentiation* (Autograd) to compute gradients automatically, we will perform these calculations by hand using matrix calculus.
+
+To maintain efficiency and mimic how professional frameworks operate, we will implement these derivations using **vectorized matrix operations** rather than looping through individual neurons.
+
+### Objective
+
+Before we begin the derivation, let's define what we know and what we need to find.
+
+**Known values (from the Forward Pass):**
+From our forward propagation, we have already computed and stored the following matrices:
+- $\mathbf{A_1}, \mathbf{H_1}, \mathbf{A_2}, \mathbf{Z}$
+
+**Our Goal:**
+We need to find the gradients of the loss function $E$ with respect to our trainable parameters. These gradients tell us how to adjust the weights and biases to minimize the error:
+- $\frac{\partial E}{\partial \mathbf{W_1}}, \frac{\partial E}{\partial \mathbf{B_1}}$ (Gradients for the hidden layer)
+- $\frac{\partial E}{\partial \mathbf{W_2}}, \frac{\partial E}{\partial \mathbf{B_2}}$ (Gradients for the output layer)
+
+### Quick Recap of the Forward Pass
+
+To ensure the derivations are clear, let's recall the sequence of operations:
+
+1.  $\mathbf{A_1} = \mathbf{X}\mathbf{W_1} + \mathbf{B_1}$
+2.  $\mathbf{H_1} = \text{ReLU}(\mathbf{A_1})$
+3.  $\mathbf{A_2} = \mathbf{H_1}\mathbf{W_2} + \mathbf{B_2}$
+4.  $\mathbf{Z} = \text{softmax}(\mathbf{A_2})$
+5.  $E = \text{Loss}(\mathbf{Y}, \mathbf{Z})$
 
 
 ## 🏗️ Model Architecture
