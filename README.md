@@ -44,8 +44,8 @@ def load_data():
 
 To implement forward propagation, the data must first be preprocessed. The following steps are performed in the load_data function:
 
-- Normalization: The input features are standardized to have a mean of 0 and a standard deviation of 1. This ensures a smoother loss surface, which allows the model to converge faster and more efficiently.
-- One-Hot Encoding: Target labels are converted from scalars to one-hot encoded vectors. This representation is essential for calculating the loss and gradients during the backpropagation phase.
+- [Normalization](https://www.datacamp.com/tutorial/normalization-in-machine-learning): The input features are standardized to have a mean of 0 and a standard deviation of 1. This ensures a smoother loss surface, which allows the model to converge faster and more efficiently.
+- [One-Hot Encoding](https://www.geeksforgeeks.org/machine-learning/ml-one-hot-encoding/): Target labels are converted from scalars to one-hot encoded vectors. This representation is essential for calculating the loss and gradients during the backpropagation phase.
 - Shuffling: Since the Iris dataset is sorted by class, the data is shuffled to prevent class imbalance in the training and testing sets.
 - Data Splitting: The dataset is split into a training set (80% / 120 samples) and a testing set (20% / 30 samples) to evaluate the model's generalization performance.
   
@@ -72,7 +72,7 @@ Before performing forward propagation, we need to initialize the model parameter
 These parameters are the “brain” of the model — they determine how input data is transformed into predictions.
 
 Weights are initialized randomly, but not purely random.  
-We use **He initialization**, which helps stabilize training and improves convergence during gradient-based optimization.
+We use [**He initialization**](https://medium.com/@piyushkashyap045/mastering-weight-initialization-in-neural-networks-a-beginners-guide-6066403140e9), which helps stabilize training and improves convergence during gradient-based optimization.
 
 ```python
 self.W1 = np.random.randn(input_dim, h_dim) * np.sqrt(2 / input_dim)
