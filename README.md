@@ -127,7 +127,7 @@ $$
 
 ---
 
-### ReLU Activation
+### ReLU Activation Function
 
 ```python
 def relu(self, x):
@@ -143,7 +143,34 @@ This allows the model to learn complex patterns and helps reduce the vanishing g
 
 ---
 
-### Softmax
+### Softmax Activation Function
+
+The final layer of our network produces raw scores called **logits** ($\mathbf{A_2}$). However, these scores can be any real number, making them difficult to use for classification. To solve this, we use the **Softmax** activation function.
+
+Softmax transforms these logits into a probability distribution where:
+1. Each value is between **0 and 1**.
+2. The sum of all output values is exactly **1**.
+
+This allows us to interpret the output as the model's confidence in each class and is a requirement for calculating the **Cross-Entropy Loss**. The standard mathematical formula is:
+
+$$z_i = \frac{e^{z_i}}{\sum_{j=1} e^{z_j}}$$
+
+In practice, calculating $e^{z_i}$ can be dangerous. If a logit $z_i$ is a large number (e.g., 500), $e^{500}$ will result in an **overflow** (it becomes `inf` in Python), which crashes the model.
+
+To prevent this, we use a technique called **Numerical Stability**. We subtract the maximum value of the input vector from all elements before computing the exponential:
+
+$$z_i = \frac{e^{z_i - \max(\mathbf{z})}}{\sum_{j=1} e^{z_j - \max(\mathbf{z})}}$$
+
+```python
+def softmax(x):
+    exps = np.exp(x - np.max(x, axis=1, keepdims=True))
+    return exps / np.sum(exps, axis=1, keepdims=True)
+```
+
+Softmax is **shift-invariant**. This means that adding or subtracting a constant from all inputs does not change the final output probability. Mathematically:
+$$\text{Softmax}(x) = \text{Softmax}(x - C)$$
+
+By setting $C = \max(\mathbf{a})$, the largest value in the vector becomes $0$ ($e^0 = 1$), and all other values become negative. This ensures that the values never explode, keeping the calculations stable while preserving the original probability distribution.
 
 ---
 
@@ -245,6 +272,33 @@ To convert the raw scores ($\mathbf{A_2}$) into probabilities that sum up to 1, 
 $$z_i = \frac{e^{a^{(2)}_{i}}}{\sum_{j=1}^{3} e^{a^{(2)}_{j}}}$$
 
 This is implemented as: `self.Z = self.softmax(self.A2)`
+
+### Loss Function: Categorical Cross-Entropy
+
+After obtaining the probabilities from the Softmax layer, we need to quantify how far the model's predictions are from the actual labels. For this, we use the [Categorical Cross-Entropy (CCE)](https://www.geeksforgeeks.org/deep-learning/categorical-cross-entropy-in-multi-class-classification/) loss function.
+
+For a single observation, the loss is calculated as:
+
+$$L = -\sum_{i=1}^{C} y_i \cdot \log(z_i)$$
+
+Where: 
+- $C$ is the number of classes (in our case, $C$ = 3).
+- $y_i$ is the ground truth (1 if the observation belongs to class $i$, otherwise 0).
+- $z_i$ is the predicted probability for class $i$ produced by the Softmax function.
+
+Since we train the model using batches rather than single observations, we calculate the average loss across the entire batch to ensure stable gradient updates:
+
+$$J = \frac{1}{N} \sum_{n=1}^{N} L_n$$
+
+Where $N$ is the batch size.
+
+```python
+def loss(self, Y, Z):
+        return np.mean(-np.sum(Y * np.log(Z + 1e-15), axis=1))
+```
+
+
+
 
 ## 🏗️ Model Architecture
 
