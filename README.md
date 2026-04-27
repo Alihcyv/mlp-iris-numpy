@@ -10,11 +10,11 @@ The implementation is explained in three main parts:
 - Backpropagation  
 - Gradient-based optimization  
 
-## Forward propagation
+## Forward Propagation
 
 Before diving into the full implementation of the forward pass, we need to cover the essential building blocks. This section explains the data preprocessing and the activation functions that make the network work.
 
-### Data preparation
+### Data Preparation
 
 ```python
 def load_data():
@@ -145,7 +145,11 @@ This allows the model to learn complex patterns and helps reduce the vanishing g
 
 ### Softmax Activation Function
 
-The final layer of our network produces raw scores called **logits** ($\mathbf{A_2}$). However, these scores can be any real number, making them difficult to use for classification. To solve this, we use the **Softmax** activation function.
+<p align="center">
+  <img src="images/softmax.png" width="500"/>
+</p>
+
+The final layer of our network produces raw scores called **logits**. However, these scores can be any real number, making them difficult to use for classification. To solve this, we use the **Softmax** activation function.
 
 Softmax transforms these logits into a probability distribution where:
 1. Each value is between **0 and 1**.
@@ -153,13 +157,13 @@ Softmax transforms these logits into a probability distribution where:
 
 This allows us to interpret the output as the model's confidence in each class and is a requirement for calculating the **Cross-Entropy Loss**. The standard mathematical formula is:
 
-$$z_i = \frac{e^{z_i}}{\sum_{j=1} e^{z_j}}$$
+$$z_i = \frac{e^{z_i}}{\sum_{j=1}^{C} e^{z_j}}$$
 
 In practice, calculating $e^{z_i}$ can be dangerous. If a logit $z_i$ is a large number (e.g., 500), $e^{500}$ will result in an **overflow** (it becomes `inf` in Python), which crashes the model.
 
 To prevent this, we use a technique called **Numerical Stability**. We subtract the maximum value of the input vector from all elements before computing the exponential:
 
-$$z_i = \frac{e^{z_i - \max(\mathbf{z})}}{\sum_{j=1} e^{z_j - \max(\mathbf{z})}}$$
+$$z_i = \frac{e^{z_i - \max(\mathbf{z})}}{\sum_{j=1}^{C} e^{z_j - \max(\mathbf{z})}}$$
 
 ```python
 def softmax(x):
@@ -168,13 +172,13 @@ def softmax(x):
 ```
 
 Softmax is **shift-invariant**. This means that adding or subtracting a constant from all inputs does not change the final output probability. Mathematically:
-$$\text{Softmax}(x) = \text{Softmax}(x - C)$$
+$$\text{Softmax}(x) = \text{Softmax}(x - T)$$
 
-By setting $C = \max(\mathbf{a})$, the largest value in the vector becomes $0$ ($e^0 = 1$), and all other values become negative. This ensures that the values never explode, keeping the calculations stable while preserving the original probability distribution.
+By setting $T = \max(\mathbf{z})$, the largest value in the vector becomes $0$ ($e^0 = 1$), and all other values become negative. This ensures that the values never explode, keeping the calculations stable while preserving the original probability distribution.
 
 ---
 
-### Forward pass
+### Forward Pass
 
 Now that we have defined the data and activation functions, we can implement the forward propagation.
 
@@ -297,6 +301,9 @@ def loss(self, Y, Z):
         return np.mean(-np.sum(Y * np.log(Z + 1e-15), axis=1))
 ```
 
+---
+
+## Backpropagation
 
 
 
