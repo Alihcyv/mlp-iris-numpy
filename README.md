@@ -234,12 +234,12 @@ b^{(1)}_1 & b^{(1)}_2 & b^{(1)}_3 & \cdots & b^{(1)}_{10}
 - $\mathbf{W_1}$ is the **weight matrix** (4 $\times$ 10), where each column represents the weights for a single neuron.
 - $\mathbf{B_1}$ is the **bias vector** (1 $\times$ 10), adding a trainable offset to each neuron.
 
-This mathematical operation is exactly what is implemented in the code as:
-`self.A1 = X @ self.W1 + self.B1`
-
 More generally, for any neuron $j$ in the hidden layer, the formula is:
 
 $$a^{(1)}_j = \sum_{i=1}^{4} (x_i \cdot w_{ij}^{(1)}) + b_j^{(1)}$$
+
+This mathematical operation is exactly what is implemented in the code as:
+`self.A1 = X @ self.W1 + self.B1`
 
 Then, the ReLU activation function is applied:
 
@@ -267,7 +267,7 @@ b^{(2)}_1 & b^{(2)}_2 & b^{(2)}_3
 - $\mathbf{H_1}$ is the **hidden layer output** (1 $\times$ 10).
 - $\mathbf{W_2}$ is the **output weight matrix** (10 $\times$ 3).
 - $\mathbf{B_2}$ is the **output bias vector** (1 $\times$ 3).
-- $\mathbf{A_2}$ is the **logits vector** (1 $\times$ 3). These are raw scores that haven't been normalized yet.
+- $\mathbf{A_2}$ is the **logits vector** (1 $\times$ 3).
 
 This is implemented as: `self.A2 = self.H1 @ self.W2 + self.B2`
 
@@ -323,204 +323,51 @@ To keep the derivations clear, let's recap the forward propagation:
 4. $\mathbf{Z} = \text{Softmax}(\mathbf{A_2})$
 5. $L = \text{Loss}(\mathbf{Y}, \mathbf{Z})$
 
+### Step 1: Finding $\frac{\partial L}{\partial \mathbf{Z}}$
 
-## 🏗️ Model Architecture
+Let's follow the chain from the end of the architecture back to the weights. We start by calculating the gradient of the loss function with respect to the output of the softmax layer, $\frac{\partial L}{\partial \mathbf{Z}}$.
 
-A simple 2-layer neural network:
+#### 1. Case: Batch size $N = 1$
+To simplify the understanding, let's first assume that the batch size is 1. In this case, the gradient $\frac{\partial L}{\partial \mathbf{Z}}$ is a vector:
 
-$$
-X \rightarrow \text{Linear} \rightarrow \text{ReLU} \rightarrow \text{Linear} \rightarrow \text{Softmax}
-$$
+$$\frac{\partial L}{\partial \mathbf{Z}} = \left[ \frac{\partial L}{\partial z_1}, \frac{\partial L}{\partial z_2}, \frac{\partial L}{\partial z_3} \right]$$
 
-### Dimensions:
+Expanding the loss function (Cross-Entropy), we get:
 
-* Input: $x \in \mathbb{R}^4$
-* Hidden layer: $h \in \mathbb{R}^{10}$
-* Output: $y \in \mathbb{R}^{3}$
+$$\frac{\partial L}{\partial \mathbf{Z}} = \begin{bmatrix} 
+\frac{\partial (y_1 \log(z_1) + y_2 \log(z_2) + y_3 \log(z_3))}{\partial z_1} \\ 
+\frac{\partial (y_1 \log(z_1) + y_2 \log(z_2) + y_3 \log(z_3))}{\partial z_2} \\ 
+\frac{\partial (y_1 \log(z_1) + y_2 \log(z_2) + y_3 \log(z_3))}{\partial z_3} 
+\end{bmatrix}$$
 
----
+Since each $z_i$ only depends on its corresponding $\log(z_i)$ term and the derivatives of all other terms with respect to $z_i$ are zero, we obtain:
 
-## ⚙️ Forward Pass
+$$\frac{\partial L}{\partial \mathbf{Z}} = \begin{bmatrix} 
+-\frac{y_1}{z_1} \\ 
+-\frac{y_2}{z_2} \\ 
+-\frac{y_3}{z_3} 
+\end{bmatrix}$$
 
-### 1. First Layer
+#### 2. Case: Batch size $N > 1$
+Now, we can generalize this for a batch of size $N$. The gradient $\frac{\partial L}{\partial \mathbf{Z}}$ becomes a matrix:
 
-$$
-A^{(1)} = XW_1 + b_1
-$$
+$$\frac{\partial L}{\partial \mathbf{Z}} = \begin{bmatrix} 
+\frac{\partial L}{\partial z_{11}} & \frac{\partial L}{\partial z_{12}} & \frac{\partial L}{\partial z_{13}} \\ 
+\frac{\partial L}{\partial z_{21}} & \frac{\partial L}{\partial z_{22}} & \frac{\partial L}{\partial z_{23}} \\ 
+\vdots & \vdots & \vdots \\ 
+\frac{\partial L}{\partial z_{N1}} & \frac{\partial L}{\partial z_{N2}} & \frac{\partial L}{\partial z_{N3}} 
+\end{bmatrix}$$
 
-$$
-H^{(1)} = \text{ReLU}(A^{(1)})
-$$
+After applying the differentiation for each element, we get the final matrix:
 
-ReLU activation:
-$$
-\text{ReLU}(x) = \max(0, x)
-$$
+$$\frac{\partial L}{\partial \mathbf{Z}} = \begin{bmatrix} 
+-\frac{y_{11}}{z_{11}} & -\frac{y_{12}}{z_{12}} & -\frac{y_{13}}{z_{13}} \\ 
+-\frac{y_{21}}{z_{21}} & -\frac{y_{22}}{z_{22}} & -\frac{y_{23}}{z_{23}} \\ 
+\vdots & \vdots & \vdots \\ 
+-\frac{y_{N1}}{z_{N1}} & -\frac{y_{N2}}{z_{N2}} & -\frac{y_{N3}}{z_{N3}} 
+\end{bmatrix}$$
 
----
+In element-wise notation, this is simply:
 
-### 2. Second Layer
+$$\left( \frac{\partial L}{\partial \mathbf{Z}} \right)_{ij} = -\frac{y_{ij}}{z_{ij}}$$
 
-$$
-A^{(2)} = H^{(1)}W_2 + b_2
-$$
-
----
-
-### 3. Softmax Output
-
-$$
-Z_i = \frac{e^{A_i}}{\sum_j e^{A_j}}
-$$
-
-This converts logits into probabilities.
-
----
-
-## 📉 Loss Function
-
-We use **Cross-Entropy Loss**:
-
-$$
-\mathcal{L} = -\frac{1}{m} \sum_{i=1}^{m} \sum_{k=1}^{C} y_{ik} \log(z_{ik})
-$$
-
-Where:
-
-* $y$ — true labels (one-hot)
-* $z$ — predicted probabilities
-* $m$ — batch size
-
----
-
-## 🔁 Backpropagation
-
-### Output Layer Gradient
-
-$$
-\frac{\partial \mathcal{L}}{\partial A^{(2)}} = Z - Y
-$$
-
----
-
-### Gradients for second layer
-
-$$
-\frac{\partial \mathcal{L}}{\partial W_2} = \frac{H^T (Z - Y)}{m}
-$$
-
-$$
-\frac{\partial \mathcal{L}}{\partial b_2} = \frac{1}{m} \sum (Z - Y)
-$$
-
----
-
-### Hidden Layer Gradient
-
-$$
-\frac{\partial \mathcal{L}}{\partial H^{(1)}} = (Z - Y) W_2^T
-$$
-
-$$
-\frac{\partial \mathcal{L}}{\partial A^{(1)}} = \frac{\partial \mathcal{L}}{\partial H^{(1)}} \cdot \mathbb{1}(A^{(1)} > 0)
-$$
-
----
-
-### Gradients for first layer
-
-$$
-\frac{\partial \mathcal{L}}{\partial W_1} = \frac{X^T \frac{\partial \mathcal{L}}{\partial A^{(1)}}}{m}
-$$
-
-$$
-\frac{\partial \mathcal{L}}{\partial b_1} = \frac{1}{m} \sum \frac{\partial \mathcal{L}}{\partial A^{(1)}}
-$$
-
----
-
-## 🔧 Optimization
-
-We use simple **Gradient Descent**:
-
-$$
-W := W - \alpha \cdot \frac{\partial \mathcal{L}}{\partial W}
-$$
-
-$$
-b := b - \alpha \cdot \frac{\partial \mathcal{L}}{\partial b}
-$$
-
-Where:
-
-* $\alpha$ — learning rate
-
----
-
-## ⚡ Initialization
-
-Weights are initialized using **He Initialization**:
-
-$$
-W \sim \mathcal{N}(0, \sqrt{\frac{2}{n}})
-$$
-
-This helps prevent vanishing/exploding gradients.
-
----
-
-## 🔄 Training Procedure
-
-1. Shuffle dataset each epoch
-2. Split into mini-batches
-3. Perform:
-
-   * Forward pass
-   * Loss computation
-   * Backward pass
-   * Parameter update
-
----
-
-## 📈 Evaluation
-
-Accuracy is computed as:
-
-$$
-\text{Accuracy} = \frac{1}{N} \sum \mathbb{1}(\hat{y} = y)
-$$
-
----
-
-## 🚀 Results
-
-The model typically achieves:
-
-* High training accuracy
-* Strong generalization on test data
-
-Despite its simplicity, this implementation demonstrates the full training pipeline of a neural network.
-
----
-
-## 🎯 Key Takeaways
-
-* Neural networks can be implemented with **pure NumPy**
-* Backpropagation is just **chain rule + matrix operations**
-* Proper initialization and normalization are critical
-* Even simple models can perform well on structured data
-
----
-
-## 📚 Future Improvements
-
-* Add regularization (L2, Dropout)
-* Try deeper architectures
-* Implement different optimizers (Adam, RMSprop)
-* Add learning rate scheduling
-
----
-
-## 🧑‍💻 Author
-
-Implemented from scratch for educational purposes to deeply understand how neural networks work under the hood.
